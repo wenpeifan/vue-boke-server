@@ -37,7 +37,7 @@ export default new Router({
             path: 'blog', name: 'Blog', component: Blog, meta: {title: '博客', isShow: true, icon: 'el-icon-tickets'}, children:
               [
                 {path: '/', name: 'BlogMain', component: BlogMain, meta: {title: '博客列表', isShow: true}}, // 草稿
-                {path: 'edit', name: 'BlogEdit', component: BlogEdit, meta: {title: '编辑博客', isShow: true}}, // 添加、修改
+                {path: 'edit', name: 'BlogEdit', component: BlogEdit, meta: {title: '编辑博客'}}, // 添加、修改、详情
               ]
           },
 

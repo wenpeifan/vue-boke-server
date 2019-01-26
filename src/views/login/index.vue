@@ -81,6 +81,9 @@
               console.log(res, "登录返回的信息");
               if ( res.code === 200 ) {
                 this.$message.success("登录成功");
+                let token = res.data.token;
+                localStorage.setItem("token", token);
+                this.$Axios.setAuthorization(token);
                 this.$router.push({name: 'IndexMain'});
               } else {
                 this.$message.error(res.message);

@@ -7,7 +7,7 @@
           <div slot="header" class="clearfix">
             <span>友链设置</span>
             <el-button style="float: right" icon="el-icon-plus" circle size="mini" type="primary" plain
-                       @click="friendSta = true"></el-button>
+                       @click="edit(0)"></el-button>
           </div>
           <div>
 
@@ -15,7 +15,7 @@
                 :data="tableData"
                 style="width: 100%">
               <el-table-column
-                  prop=""
+                  type="index"
                   label="#"
                   width="50">
               </el-table-column>
@@ -28,27 +28,31 @@
                   label="站点">
               </el-table-column>
               <el-table-column
-                  prop="address"
+                  prop="opera"
                   label="操作"
                   width="230">
                 <template slot-scope="scope">
-                  <a target="_blank" href="####">
+                  <a href="#">
                     <el-button size="mini">去看看</el-button>
                   </a>
                   <span>
-                    <el-button size="mini" type="primary" @click="edit">修改</el-button>
+                    <el-button size="mini" type="primary" @click="edit(scope.row)">修改</el-button>
                   </span>
                   <el-popover
-                      :ref="scope.row.id"
                       placement="top"
-                      width="160">
+                      width="160"
+                      title="操作提示"
+                      v-model="scope.row.visible">
                     <p>确定删除吗？</p>
-                    <div style="text-align: right; margin: 0">
-                      <el-button size="mini" type="text" @click="$refs[scope.row.id].doClose()">取消</el-button>
-                      <el-button type="primary" size="mini" @click="del(scope.row.id)">确定</el-button>
+                    <div style="text-align: right; margin-top: 10px;">
+                      <el-button type="text" @click="scope.row.visible = false" style="color: #9a9a9a;">取消</el-button>
+                      <el-button type="primary" @click="popoverCancle(scope.row.id)"
+                                 style="padding: 5px 10px; background: #409EFF; color: #fff;">确定
+                      </el-button>
                     </div>
-                    <el-button type="danger" slot="reference" size="mini">删除</el-button>
+                    <el-button type="danger" size="small" slot="reference">删除</el-button>
                   </el-popover>
+
                 </template>
               </el-table-column>
             </el-table>
@@ -68,7 +72,7 @@
                 show-icon>
             </el-alert>
             <div class="set_author">
-              <el-input></el-input>
+              <el-input v-for="(item, i) in marks" v-model="item.val" :key="i"></el-input>
               <el-button type="primary" plain>保存</el-button>
             </div>
           </div>
@@ -109,39 +113,90 @@
           website: [{required: true, message: '请输入活动名称', trigger: 'blur'},],
         },
         friendSta: false,
-        tableData: [
-          {
-            title: '王小虎',
-            website: 'www.baidu.com'
-          }, {
-            title: '王小虎',
-            website: 'www.baidu.com'
-          }, {
-            title: '王小虎',
-            website: 'www.baidu.com'
-          },
-        ]
+        tableData: [],
+        marks: [],
       }
     },
     methods: {
-      edit() {
+      // 列表详情
+      getData() {
+        this.$Axios.get(`/yun/blog/friend_list?pageIndex=${this.pageIndex}&pageSize=${this.pageSize}`).then(res => {
+          console.log(res, "配置列表");
+          if ( res.code === 200 ) {
+            this.tableData = res.data;
+          } else {
+            this.$message.error(res.message);
+          }
+        });
+      },
+
+      // 获取标识设置
+      getMarks() {
+        this.$Axios.get('/yun/blog/get_configure').then(res => {
+          console.log(res, "获取标识设置");
+          if ( res.code === 200 ) {
+            this.marks = res.data;
+          } else {
+            this.$message.error(res.message);
+          }
+        });
+      },
+
+      // 编辑弹框
+      edit( row ) {
+        console.log(row);
         this.friend = {
-          title: '1',
-          website: '1',
-        };
+          title: row.title,
+          website: row.website,
+        }
+        if ( row !== 0 ) {
+          this.friend.id = row.id;
+        }
         this.friendSta = true;
       },
+
+      // 提交表单
       submitForm() {
         this.$refs.friend.validate((valid) => {
           if (valid) {
-            alert('submit!');
+            let dat = this.friend;
+            this.$Axios.post('/yun/blog/operation_friend', dat).then(res => {
+              if ( res.code === 200 ) {
+                this.$message.success("编辑成功");
+                this.friendSta = false;
+                this.getData();
+              } else {
+                this.$message.error(res.message);
+              }
+            });
           } else {
             console.log('error submit!!');
             return false;
           }
         });
-      }
-    }
+      },
+
+      // 列表删除
+      popoverCancle(id) {
+        let dat = {
+          id: id,
+          sta: 1,
+        };
+        this.$Axios.post('/yun/blog/operation_friend', dat).then(res => {
+          if ( res.code === 200 ) {
+            this.$message.success("删除成功");
+            this.getData();
+          } else {
+            this.$message.error(res.message);
+          }
+        });
+      },
+
+    },
+    created() {
+      this.getData();
+      this.getMarks();
+    },
   }
 </script>
 

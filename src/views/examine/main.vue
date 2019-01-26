@@ -13,7 +13,7 @@
           </el-date-picker>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary">查询</el-button>
+          <el-button type="primary" @click="getData">查询</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -21,7 +21,7 @@
     <div class="list">
 
       <el-table
-          :data="list"
+          :data="tableData"
           border
           style="width: 100%">
         <el-table-column
@@ -67,29 +67,34 @@
             align="center"
             width="80">
           <template slot-scope="scope">
-            <el-tag>待审核</el-tag>
+            <el-tag type="warning" v-if="scope.row.is_pass === 0">待审核</el-tag>
+            <el-tag type="danger" v-if="scope.row.is_pass === 1">未通过</el-tag>
+            <el-tag type="success" v-if="scope.row.is_pass === 2">已通过</el-tag>
           </template>
         </el-table-column>
         <el-table-column
             label="操作"
             width="230">
           <template slot-scope="scope">
-            <a target="_blank" href="###">
+            <a href="#" v-if="scope.row.is_pass !== 2">
               <el-button size="mini">查看原文</el-button>
             </a>
-            <span>
-              <el-button size="mini" type="primary" @click="examineFun">审核</el-button>
+            <span v-if="scope.row.is_pass === 0">
+              <el-button size="mini" type="primary" @click="examineFun(scope.row.id)">审核</el-button>
             </span>
             <el-popover
-                :ref="scope.row.id"
                 placement="top"
-                width="160">
+                width="160"
+                title="操作提示"
+                v-model="scope.row.visible">
               <p>确定删除吗？</p>
-              <div style="text-align: right; margin: 0">
-                <el-button size="mini" type="text" @click="$refs[scope.row.id].doClose()">取消</el-button>
-                <el-button type="primary" size="mini">确定</el-button>
+              <div style="text-align: right; margin-top: 10px;">
+                <el-button type="text" @click="scope.row.visible = false" style="color: #9a9a9a;">取消</el-button>
+                <el-button type="primary" @click="popoverCancle(scope.row.id)"
+                           style="padding: 5px 10px; background: #409EFF; color: #fff;">确定
+                </el-button>
               </div>
-              <el-button type="danger" slot="reference" size="mini">删除</el-button>
+              <el-button type="danger" size="small" slot="reference">删除</el-button>
             </el-popover>
           </template>
         </el-table-column>
@@ -103,11 +108,11 @@
           background
           @size-change="pageSizeFun"
           @current-change="pageIndexFun"
-          :current-page="1"
+          :current-page="pageIndex"
           :page-sizes="[10, 20, 30, 40]"
-          :page-size="10"
+          :page-size="pageSize"
           layout="total, sizes, prev, pager, next, jumper"
-          :total="50">
+          :total="total">
       </el-pagination>
     </div>
 
@@ -132,14 +137,20 @@
           <p>原文:</p>
 
           <div class="look">
-            <a target="_blank" href="###">
+            <a href="#">
               <span>XXX</span>
             </a>
           </div>
 
           <p>内容:</p>
 
-          <div class="cont" v-html="">
+          <div>
+            <el-input
+                type="textarea"
+                :rows="6"
+                placeholder="请输入内容"
+                v-model="textarea">
+            </el-input>
           </div>
 
         </div>
@@ -147,8 +158,8 @@
       </div>
       <div slot="footer" class="dialog-footer">
         <el-button @click="examineSta = false">取 消</el-button>
-        <el-button type="danger">不通过</el-button>
-        <el-button type="success">通过</el-button>
+        <el-button type="danger" @click="audit(authId, 2)">不通过</el-button>
+        <el-button type="success" @click="audit(authId, 1)">通过</el-button>
       </div>
     </el-dialog>
 
@@ -159,78 +170,72 @@
   export default {
     data() {
       return {
-        param: {
-          pageIndex: 1,
-          pageSize: 10,
-        },
-        date: [],
-        list: [
-          {
-            "id": 6,
-            "u_id": 3,
-            "b_id": 164,
-            "f_id": null,
-            "cont": "不错啊222",
-            "is_del": "0",
-            "is_pass": 0,
-            "create_time": "2019-01-19T17:05:56.000Z",
-            "type": 1,
-            "user_name": "管理陈",
-            "blog_title": "【CSS】表格td内容的自适应垂直居中",
-            "blog_id": 164
-          },
-          {
-            "id": 6,
-            "u_id": 3,
-            "b_id": 164,
-            "f_id": null,
-            "cont": "不错啊222",
-            "is_del": "0",
-            "is_pass": 0,
-            "create_time": "2019-01-19T17:05:56.000Z",
-            "type": 1,
-            "user_name": "管理陈",
-            "blog_title": "【CSS】表格td内容的自适应垂直居中",
-            "blog_id": 164
-          },
-          {
-            "id": 6,
-            "u_id": 3,
-            "b_id": 164,
-            "f_id": null,
-            "cont": "不错啊222",
-            "is_del": "0",
-            "is_pass": 0,
-            "create_time": "2019-01-19T17:05:56.000Z",
-            "type": 1,
-            "user_name": "管理陈",
-            "blog_title": "【CSS】表格td内容的自适应垂直居中",
-            "blog_id": 164
-          },
-          {
-            "id": 6,
-            "u_id": 3,
-            "b_id": 164,
-            "f_id": null,
-            "cont": "不错啊222",
-            "is_del": "0",
-            "is_pass": 0,
-            "create_time": "2019-01-19T17:05:56.000Z",
-            "type": 1,
-            "user_name": "管理陈",
-            "blog_title": "【CSS】表格td内容的自适应垂直居中",
-            "blog_id": 164
-          },
-        ],
+        tableData: [],
+
+        // 分页
+        pageIndex: 1,
+        pageSize: 10,
+        total: 0,
+
         examineSta: false,
+        textarea: '', // 审核内容
+        authId: '', // 获取审核时的id
       }
     },
     created() {
     },
     methods: {
+      // 列表详情
+      getData() {
+        this.$Axios.get(`/yun/blog/comment_list?pageIndex=${this.pageIndex}&pageSize=${this.pageSize}`).then(res => {
+          console.log(res, "审核列表");
+          if ( res.code === 200 ) {
+            this.tableData = res.data.list;
+            this.total = res.data.total;
+            this.pageIndex = res.data.pageIndex;
+            this.pageSize = res.data.pageSize;
+          } else {
+            this.$message.error(res.message);
+          }
+        });
+      },
+
+      // 列表删除
+      popoverCancle(id) {
+        let dat = {
+          id: id,
+          sta: 1,
+        };
+        this.$Axios.post('/yun/blog/evaluate_del', dat).then(res => {
+          if ( res.code === 200 ) {
+            this.$message.success("删除成功");
+            this.getData();
+          } else {
+            this.$message.error(res.message);
+          }
+        });
+      },
+
+      // 审核通过/不通过
+      audit(id, state) {
+        let dat = {
+          id: id,
+          sta: state
+        };
+        this.$Axios.post('/yun/blog/evaluate_examine', dat).then(res => {
+          if ( res.code === 200 ) {
+            this.$message.success("设置成功");
+            this.examineSta = false;
+            this.getData();
+          } else {
+            this.$message.error(res.message);
+          }
+        });
+      },
+
       // 序号
       showIndex(index) {
-        return index + (this.param.pageIndex - 1) * this.param.pageSize + 1;
+        return index + (this.pageIndex - 1) * this.pageSize + 1;
       },
       // 每页条数改变
       pageSizeFun(val) {
@@ -241,10 +246,14 @@
         console.log(val);
       },
       // 打开弹窗
-      examineFun() {
+      examineFun( id ) {
         this.examineSta = true;
+        this.authId = id;
       }
-    }
+    },
+    created() {
+      this.getData();
+    },
   }
 </script>
 
@@ -275,13 +284,6 @@
         margin-top: 10px;
         p {
           font-weight: bold;
-        }
-        .cont {
-          width: 100%;
-          height: 300px;
-          border: 1px solid #e1e1e1;
-          padding: 10px;
-          overflow: auto;
         }
         .look {
           a {

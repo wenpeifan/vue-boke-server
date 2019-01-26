@@ -15,6 +15,8 @@
         <el-form-item>
           <el-button type="primary">查询</el-button>
         </el-form-item>
+
+        <el-button style="float: right;" type="default" @click="goEdit(0)">添加</el-button>
       </el-form>
     </div>
 
@@ -87,7 +89,6 @@
                 placement="top"
                 width="160"
                 title="操作提示"
-                style="z-index: 99999;"
                 v-model="scope.row.visible">
               <p>确定删除吗？</p>
               <div style="text-align: right; margin-top: 10px;">
